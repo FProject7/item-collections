@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project 7 - Item Images</title>
+    <title>Project 7 - Image Browser</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         ::-webkit-scrollbar {
             width: 7px;
@@ -27,8 +28,8 @@
         }
 
         body {
-            background-color: #030711;
-            color: #fff;
+            background-color: #0a0a0a;
+            color: #ffffff;
             font-family: Arial, sans-serif;
         }
         header {
@@ -71,201 +72,525 @@
         }
         #image-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 10px;
-            width: 100%;
-            padding: 5px;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
         }
         .image-item {
-            cursor: pointer;
-            width: 150px;
-            height: 150px;
-            background-color: #030711;
-            border: 1px solid #1d283a9f;
-            border-radius: 15px;
-            display: flex;
-            justify-content: center;
-            align-items: center; /* Center content vertically */
-            position: relative;
+            background-color: #0a0a0a;
+            border: 1px solid #333333;
+            border-radius: 10px;
             overflow: hidden;
-            transition: all 0.15s ease-in-out;
+            transition: transform 0.3s ease;
+            position: relative;
+            cursor: pointer;
         }
         .image-item:hover {
-            border: 1px solid #1d283a;
-        }
-        .image-item:hover::after {
-            content: "Click to download";
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 14px;
-            opacity: 1;
-        }
-
-        .image-item::after {
-            content: "";
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: #fff;
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 14px;
-            opacity: 0;
-            transition: opacity 0.3s ease-in-out;
+            transform: scale(1.05);
         }
         .image-item img {
-            width: 80%;
-            height: 80%;
-            opacity: 0;
-            transition: all 0.2s ease-in-out;
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
             display: block;
-        }
-        .image-item img.loaded {
-            opacity: 1;
         }
         .image-text {
             position: absolute;
-            bottom: 5px;
-            left: 5px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 5px;
-            font-size: 10px;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px;
+            font-size: 14px;
+        }
+        .download-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
             border-radius: 5px;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .image-item:hover .download-button {
+            opacity: 1;
         }
         footer {
             padding: 10px;
             background-color: #1d283a;
             text-align: center;
         }
+
+        .search-filter {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            width: 100%;
+            position: relative;
+        }
+
+        .search-container {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        #search-input {
+            width: 90%;
+            padding: 10px 40px 10px 40px;
+            border: 1px solid #333333;
+            border-radius: 5px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-size: 16px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888888;
+        }
+
+        #filter-button {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #888888;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 10px;
+            transition: background-color 0.3s;
+            border-radius: 5px;
+        }
+
+        #filter-button:hover {
+            background-color: #333333;
+        }
+
+        #filter-dropdown {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background-color: #1d283a;
+            border: 1px solid #030711;
+            border-radius: 5px;
+            padding: 10px;
+            z-index: 1000;
+            min-width: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        #filter-dropdown div {
+            margin-bottom: 10px;
+        }
+
+        #filter-dropdown label {
+            display: flex;
+            align-items: center;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        #filter-dropdown input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        #active-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .filter-tag {
+            display: inline-flex;
+            align-items: center;
+            background-color: rgba(29, 40, 58, 0.8);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 5px;
+            text-transform: capitalize;
+        }
+
+        .filter-tag.red {
+            background-color: rgba(248, 215, 218, 0.8);
+            color: #721c24;
+        }
+
+        .filter-tag.green {
+            background-color: rgba(212, 237, 218, 0.8);
+            color: #155724;
+        }
+
+        .filter-tag.blue {
+            background-color: rgba(209, 236, 241, 0.8);
+            color: #0c5460;
+        }
+
+        .filter-tag:hover {
+            filter: brightness(0.9);
+        }
+
+        .filter-tag::after {
+            content: ' ✕';
+            margin-left: 5px;
+            font-size: 12px;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .search-filter {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            width: 100%;
+            position: relative;
+        }
+
+        .search-container {
+            flex-grow: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        #search-input {
+            width: 90%;
+            padding: 10px 40px 10px 40px;
+            border: 1px solid #333333;
+            border-radius: 5px;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            font-size: 16px;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #888888;
+        }
+
+        #filter-button {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #888888;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 10px;
+            transition: background-color 0.3s;
+            border-radius: 5px;
+        }
+
+        #filter-button:hover {
+            background-color: #333333;
+        }
+
+        #filter-dropdown {
+            position: absolute;
+            right: 0;
+            top: 100%;
+            background-color: #1d283a;
+            border: 1px solid #030711;
+            border-radius: 5px;
+            padding: 10px;
+            z-index: 1000;
+            min-width: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        #filter-dropdown div {
+            margin-bottom: 10px;
+        }
+
+        #filter-dropdown label {
+            display: flex;
+            align-items: center;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        #filter-dropdown input[type="checkbox"] {
+            margin-right: 10px;
+        }
+
+        #active-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .filter-tag {
+            display: inline-flex;
+            align-items: center;
+            background-color: rgba(29, 40, 58, 0.8);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin: 5px;
+            text-transform: capitalize;
+        }
+
+        .filter-tag.red {
+            background-color: rgba(248, 215, 218, 0.8);
+            color: #721c24;
+        }
+
+        .filter-tag.green {
+            background-color: rgba(212, 237, 218, 0.8);
+            color: #155724;
+        }
+
+        .filter-tag.blue {
+            background-color: rgba(209, 236, 241, 0.8);
+            color: #0c5460;
+        }
+
+        .filter-tag:hover {
+            filter: brightness(0.9);
+        }
+
+        .filter-tag::after {
+            content: ' ✕';
+            margin-left: 5px;
+            font-size: 12px;
+        }
+
+        .scroll-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #333333;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            width: 50px;
+            height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .scroll-top.visible {
+            opacity: 1;
+        }
+
+        .github-link {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: #ffffff;
+            font-size: 40px;
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .github-link:hover {
+            opacity: 1;
+        }
+
+        .image-item img {
+            width: 100%;
+            height: auto;
+            max-height: 200px;
+            object-fit: cover;
+            display: block;
+        }
     </style>
 </head>
 <body>
-    <header>
-        <input type="search" id="search-bar" placeholder="Search...">
-        <button id="filter-button">Filter</button>
-        <div id="filter-dropdown" style="display:none;"></div>
-    </header>
-    <main id="image-grid"></main>
-    <footer>
-        <!-- footer content -->
-    </footer>
+    <div class="container">
+        <div class="search-filter">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input type="text" id="search-input" placeholder="Search images...">
+                <button id="filter-button"><i class="fas fa-filter"></i></button>
+            </div>
+            <div id="filter-dropdown"></div>
+        </div>
+        <div id="active-filters"></div>
+        <div id="image-grid"></div>
+    </div>
+    <a href="https://github.com/FProject7/item-collections" target="_blank" rel="noopener noreferrer" class="github-link">
+        <i class="fab fa-github"></i>
+    </a>
+    <button class="scroll-top" id="scroll-top"><i class="fas fa-chevron-up"></i></button>
+
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
+        let images = [];
+        let categories = [];
+        let activeFilters = [];
+        let searchTerm = "";
+        const filterColors = {};
+
+        // Fetch images from the API
+        async function fetchImages() {
+            const response = await fetch('/api/images');
+            images = await response.json();
+            renderImages();
+        }
+
+        // Fetch categories from the API
+        async function fetchCategories() {
+            const response = await fetch('/api/categories');
+            categories = await response.json();
+            setupFilterButton();
+        }
+
+        function renderImages() {
             const imageGrid = document.getElementById('image-grid');
-            const searchBar = document.getElementById('search-bar');
+            imageGrid.innerHTML = '';
+
+            const filteredImages = images.filter(image =>
+                (activeFilters.length === 0 || activeFilters.includes(image.category)) &&
+                image.file.toLowerCase().includes(searchTerm.toLowerCase())
+            );
+
+            filteredImages.forEach(image => {
+                const card = document.createElement('div');
+                card.className = 'image-item';
+                card.innerHTML = `
+                    <img src="/images/${image.category}/${image.file}" alt="${image.file}">
+                    <div class="image-text">${image.file}</div>
+                    <button class="download-button">
+                        <i class="fas fa-download"></i>
+                    </button>
+                `;
+                card.addEventListener('click', () => handleDownload(image.category, image.file));
+                imageGrid.appendChild(card);
+            });
+        }
+
+        function handleDownload(category, file) {
+            const link = document.createElement("a");
+            link.href = `/images/${category}/${file}`;
+            link.download = file;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function toggleFilter(filter) {
+            if (activeFilters.includes(filter)) {
+                activeFilters = activeFilters.filter(f => f !== filter);
+                delete filterColors[filter]; // Remove color when filter is removed
+            } else {
+                activeFilters.push(filter);
+            }
+            renderActiveFilters();
+            renderImages();
+        }
+
+        function renderActiveFilters() {
+            const activeFiltersContainer = document.getElementById('active-filters');
+            activeFiltersContainer.innerHTML = '';
+            activeFilters.forEach(filter => {
+                if (!filterColors[filter]) {
+                    filterColors[filter] = getRandomColor();
+                }
+                const filterTag = document.createElement('span');
+                filterTag.className = `filter-tag ${filterColors[filter]}`;
+                filterTag.textContent = `${capitalizeFirstLetter(filter)}`;
+                filterTag.setAttribute('data-filter', filter);
+                filterTag.onclick = () => toggleFilter(filter);
+                activeFiltersContainer.appendChild(filterTag);
+            });
+        }
+
+        function getRandomColor() {
+            const colors = ['red', 'green', 'blue'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        function capitalizeFirstLetter(string) {
+            return string.charAt(0).toUpperCase() + string.slice(1);
+        }
+
+        function setupFilterButton() {
             const filterButton = document.getElementById('filter-button');
             const filterDropdown = document.getElementById('filter-dropdown');
 
-            let allImages = [];
-            let categories = [];
-            let selectedCategories = [];
+            filterButton.addEventListener('click', (e) => {
+                e.stopPropagation();
+                filterDropdown.style.display = filterDropdown.style.display === 'block' ? 'none' : 'block';
+                filterDropdown.innerHTML = categories.map(category => `
+                    <div>
+                        <label>
+                            <input type="checkbox" id="${category.name}" ${activeFilters.includes(category.name) ? 'checked' : ''}>
+                            ${category.name}
+                        </label>
+                    </div>
+                `).join('');
 
-            // Fetch initial data
-            async function fetchData() {
-                try {
-                    const imagesResponse = await fetch('/api/images');
-                    allImages = await imagesResponse.json();
-
-                    const categoriesResponse = await fetch('/api/categories');
-                    categories = await categoriesResponse.json();
-
-                    populateFilters(categories);
-                    displayImages(allImages);
-                } catch (error) {
-                    console.error('Error fetching data:', error);
-                }
-            }
-
-            function populateFilters(categories) {
-                filterDropdown.innerHTML = '';
                 categories.forEach(category => {
-                    const categoryLabel = document.createElement('label');
-                    const categoryCheckbox = document.createElement('input');
-                    categoryCheckbox.type = 'checkbox';
-                    categoryCheckbox.value = category.name;
-                    categoryCheckbox.className = 'category-checkbox';
-                    categoryCheckbox.addEventListener('change', handleFilterChange);
-                    categoryLabel.appendChild(categoryCheckbox);
-                    categoryLabel.appendChild(document.createTextNode(category.name));
-                    filterDropdown.appendChild(categoryLabel);
-                });
-            }
-
-            function displayImages(images) {
-                imageGrid.innerHTML = '';
-                images.forEach(image => {
-                    const imageUrl = `/images/${encodeURIComponent(image.category)}/${encodeURIComponent(image.file)}`;
-                    const imageItem = document.createElement('div');
-                    imageItem.className = 'image-item';
-
-                    const fileNameWithoutExtension = image.file.split('.').slice(0, -1).join('.');
-
-                    imageItem.innerHTML = `
-                        <img data-src="${imageUrl}" alt="" />
-                        <div class="image-text">${fileNameWithoutExtension}</div>
-                    `;
-                    imageItem.addEventListener('click', () => {
-                        const a = document.createElement('a');
-                        a.href = imageUrl;
-                        a.download = image.file;
-                        a.click();
-                    });
-                    imageGrid.appendChild(imageItem);
-                });
-                lazyLoadImages();
-            }
-
-            function lazyLoadImages() {
-                const images = document.querySelectorAll('.image-item img');
-                const observer = new IntersectionObserver((entries) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            const img = entry.target;
-                            if (!img.src) {
-                                img.src = img.dataset.src;
-                            }
-                            img.classList.add("loaded");
-                            observer.unobserve(img);
-                        }
+                    document.getElementById(category.name).addEventListener('change', (e) => {
+                        toggleFilter(category.name);
                     });
                 });
-
-                images.forEach(img => observer.observe(img));
-            }
-
-            function handleFilterChange() {
-                selectedCategories = Array.from(filterDropdown.querySelectorAll('.category-checkbox:checked')).map(cb => cb.value);
-                filterImages();
-            }
-
-            function filterImages() {
-                const searchQuery = searchBar.value.toLowerCase();
-                
-                const filteredImages = allImages.filter(image => {
-                    const imageUrl = `/images/${encodeURIComponent(image.category)}/${encodeURIComponent(image.file)}`;
-                    const categoryMatches = selectedCategories.length === 0 || selectedCategories.includes(image.category);
-                    const searchMatches = image.file.toLowerCase().includes(searchQuery);
-
-                    return categoryMatches && searchMatches;
-                });
-
-                displayImages(filteredImages);
-            }
-
-            searchBar.addEventListener('input', filterImages);
-            filterButton.addEventListener('click', () => {
-                filterDropdown.style.display = filterDropdown.style.display === 'none' ? 'block' : 'none';
             });
 
-            // Initial fetch of data
-            fetchData();
+            document.addEventListener('click', (e) => {
+                if (!filterDropdown.contains(e.target) && e.target !== filterButton) {
+                    filterDropdown.style.display = 'none';
+                }
+            });
+        }
+
+        document.getElementById('search-input').addEventListener('input', (e) => {
+            searchTerm = e.target.value;
+            renderImages();
         });
+
+        document.getElementById('scroll-top').addEventListener('click', () => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        window.addEventListener('scroll', () => {
+            const scrollTopButton = document.getElementById('scroll-top');
+            if (window.scrollY > 300) {
+                scrollTopButton.classList.add('visible');
+            } else {
+                scrollTopButton.classList.remove('visible');
+            }
+        });
+
+        // Initial fetch and render
+        fetchImages();
+        fetchCategories();
     </script>
 </body>
 </html>
